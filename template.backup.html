@@ -1,0 +1,570 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paulo Reyes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #111111;
+    --dim: #737373;
+    --rule: #d9d9d9;
+    --hatch: #ededed;
+    --sans: "IBM Plex Sans", -apple-system, system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --serif: "IBM Plex Serif", Georgia, serif;
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #0b0b0b;
+    --ink: #e8e8e8;
+    --dim: #8a8a8a;
+    --rule: #2a2a2a;
+    --hatch: #1a1a1a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    padding: 0 24px 84px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-tap-highlight-color: transparent;
+    overflow-wrap: break-word;
+  }
+
+  .sheet { max-width: 760px; margin: 0 auto; }
+
+  a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* ---------- masthead ---------- */
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px 16px;
+    padding: 26px 0 0;
+  }
+
+  .bar .name {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+
+  .clock {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ctl {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--dim);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .ctl:hover { color: var(--ink); }
+  .ctl:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .ctl b {
+    font-weight: 400;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* ---------- bio ---------- */
+
+  .bio {
+    padding: 22px 0 34px;
+    max-width: 56ch;
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* ---------- section label ---------- */
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 16px;
+    padding-bottom: 10px;
+  }
+
+  #density { margin-left: auto; }
+
+  .label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 0.01em;
+  }
+
+  /* ---------- entries ---------- */
+
+  .entry {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 0 24px;
+    padding: 20px 0;
+    border-top: 1px solid var(--rule);
+    align-items: start;
+  }
+
+  .gutter {
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.8;
+    color: var(--dim);
+    letter-spacing: 0.05em;
+    padding-top: 3px;
+  }
+  .gutter .acc { color: var(--ink); }
+
+  .body { min-width: 0; }
+
+  .title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 5px;
+    line-height: 1.4;
+  }
+
+  .note {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 54ch;
+  }
+  .note em { font-style: italic; }
+
+  mark {
+    background: none;
+    color: inherit;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .src, .caption {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.05em;
+    margin-top: 8px;
+    display: block;
+  }
+  .src { text-transform: lowercase; }
+
+  .idx-label { display: none; }
+
+  .plate {
+    display: block;
+    width: 100%;
+    max-width: 380px;
+    border: 1px solid var(--rule);
+    background-color: var(--hatch);
+    background-image: repeating-linear-gradient(45deg, transparent 0 7px, var(--rule) 7px 8px);
+    position: relative;
+  }
+
+  .plate span {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--paper);
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.11em;
+    padding: 3px 7px;
+    border: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+
+  /* ---------- index mode ---------- */
+
+  :root[data-density="index"] .entry { padding: 5px 0; align-items: baseline; }
+  :root[data-density="index"] .gutter { padding-top: 0; line-height: 1.7; }
+  :root[data-density="index"] .plate,
+  :root[data-density="index"] .caption,
+  :root[data-density="index"] .src { display: none; }
+
+  :root[data-density="index"] .idx-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.7;
+  }
+  :root[data-density="index"] .title,
+  :root[data-density="index"] .note {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.7;
+    margin: 0;
+    max-width: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* One line of note per row. Read mode keeps every paragraph. */
+  :root[data-density="index"] .note ~ .note { display: none; }
+
+  /* ---------- index hover preview ---------- */
+
+  #preview {
+    position: absolute;
+    display: none;
+    max-width: 260px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  #preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Pointer devices only, index mode only. */
+  @media (hover: hover) {
+    :root[data-density="index"] #preview.on { display: block; }
+  }
+
+  /* ---------- end of log ---------- */
+
+  #sentinel { height: 1px; }
+
+  .end {
+    border-top: 1px solid var(--rule);
+    padding: 20px 0 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* ---------- pinned utility bar ---------- */
+
+  .foot {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+    padding: 0 24px;
+    z-index: 10;
+  }
+
+  .foot .inner {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 20px;
+    padding: 11px 0 calc(11px + env(safe-area-inset-bottom));
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    color: var(--dim);
+  }
+  .foot .links {
+    display: flex;
+    gap: 20px;
+  }
+
+  .foot a { color: var(--dim); }
+  .foot a:hover { color: var(--ink); }
+
+  /* ---------- mobile ---------- */
+
+  @media (max-width: 700px) {
+    body { padding: 0 18px 76px; }
+
+    .bar { padding: 20px 0 0; }
+    .bar .name { font-size: 16px; }
+    .ctl { font-size: 12px; }
+
+    .bio { padding: 18px 0 24px; font-size: 15px; }
+
+    .controls { padding-bottom: 4px; }
+    .controls .ctl { padding: 8px 0; }
+
+    .entry { grid-template-columns: minmax(0, 1fr); gap: 9px; padding: 18px 0; }
+    .gutter { padding-top: 0; line-height: 1.4; }
+
+    .plate { max-width: 100%; }
+
+    :root[data-density="index"] .entry { padding: 10px 0; gap: 3px; }
+    :root[data-density="index"] .title,
+    :root[data-density="index"] .note { white-space: normal; }
+
+    /* Only two short items — keep them on one row. */
+    .foot { padding: 0 18px; }
+    .foot .inner { gap: 12px; }
+    .foot .links { gap: 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+</style>
+
+<div class="sheet" id="top">
+
+  <div class="bar">
+    <span class="name">Paulo Reyes</span>
+    <button class="ctl" id="theme" aria-label="Toggle light or dark"><b>Light</b>&nbsp;/&nbsp;Dark</button>
+  </div>
+
+  <p class="bio">Paulo Reyes is a brand and communications strategist based in Calgary, by
+  way of Manila. He's a co-founder and Managing Partner at <a href="#">Monday Off</a>,
+  leads design and digital communications at <a href="#">First Alliance Church</a>, and
+  writes for Credible Insights.</p>
+
+  <div class="controls">
+    <span class="label">Research log</span>
+    <button class="ctl" id="density" aria-label="Toggle read or index view"><b>Read</b>&nbsp;/&nbsp;Index</button>
+  </div>
+
+  <main id="log"></main>
+  <div id="sentinel"></div>
+  <div class="end" id="end" hidden>End of log</div>
+
+</div>
+
+<div class="foot">
+  <div class="inner">
+    <span class="clock" id="clock">Calgary</span>
+    <span class="links">
+      <a href="#">RSS</a>
+      <a href="#">Contact</a>
+      <a href="#top">&#8593; Top</a>
+    </span>
+  </div>
+</div>
+
+<div id="preview" aria-hidden="true"><img alt=""></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Sample data, shaped like GET /v3/channels/{id}/contents so real blocks
+// drop straight in. Swap SEED for the build-time fetch result.
+// ---------------------------------------------------------------------------
+const SEED = [
+  { base_class: "Text", title: null,
+    content: "The cure for boredom is curiosity. There is no cure for curiosity.",
+    source: "Dorothy Parker" },
+  { base_class: "Image", title: "Standard Power 785", dims: "1200 \u00d7 1600", source: null },
+  { base_class: "Link", title: "95 reasons for having your own website", source: "95reasons.website",
+    content: "To write for oneself. To post quietly. To have a home on the open web." },
+  { base_class: "Link", title: "Karsten Systems", source: "karsten.systems",
+    content: "There exists a website that is useful, maintainable, unassuming and sustainable. We try to create systems like that." },
+  { base_class: "Image", title: "Sacai SS26, look 14", dims: "1400 \u00d7 1867", source: null },
+  { base_class: "Text", title: null,
+    content: "I want to seize my <em>is</em>. And like a bird I sing hallelujah into the air. And my song belongs to no one. But no passion suffered in pain and love is not followed by a hallelujah.",
+    source: "Clarice Lispector" },
+  { base_class: "Link", title: "Do you post or do you RELEASE?", source: "ystrickler.com",
+    content: "A post is a box we fill on a social media platform. A release is a richer and deeper expression of an idea." },
+  { base_class: "Image", title: "Objects for space, Unorthodox Elevation", dims: "1600 \u00d7 1067", source: null },
+  { base_class: "Link", title: "tiny.garden", source: "tiny.garden",
+    content: "Turn any Are.na channel into a website. Pick a channel, choose a template, get a site." },
+  { base_class: "Media", title: "The real billboard is now the pic of the billboard", source: "youtube.com",
+    content: "Panel on attention, surfaces, and what advertising became." },
+  { base_class: "Image", title: "Katharyn McCullough, index view", dims: "1440 \u00d7 900", source: null },
+  { base_class: "Link", title: "Beyond the dark forest theory of the internet", source: "ystrickler.com",
+    content: "In real life I am a reasonably self-confident forty-year-old. On the internet I am a teenager struggling to find my identity." }
+];
+
+// Repeat the seed so the scrolling behaviour is actually visible in the demo.
+const TOTAL = 96;
+const BLOCKS = [];
+for (let i = 0; i < TOTAL; i++) {
+  BLOCKS.push(Object.assign({}, SEED[i % SEED.length], { id: TOTAL - i }));
+}
+
+const KIND = { Text: "text", Link: "link", Image: "image", Media: "media", Attachment: "image" };
+const PAGE = 24;
+let shown = 0;
+
+function rowHTML(b) {
+  const kind = KIND[b.base_class];
+  const acc = String(b.id).padStart(4, "0");
+  let body = "";
+
+  if (kind === "text") {
+    body = '<p class="note">' + b.content + '</p>' +
+           (b.source ? '<span class="src">&mdash; ' + b.source + '</span>' : "");
+  } else if (kind === "image") {
+    body = '<div class="plate" style="aspect-ratio: 3 / 2"><span>' + b.dims + '</span></div>' +
+           '<span class="caption">' + b.title + '</span>';
+  } else {
+    body = '<h2 class="title"><a href="#">' + b.title + '</a></h2>' +
+           (b.content ? '<p class="note">' + b.content + '</p>' : "") +
+           (b.source ? '<span class="src">' + b.source + '</span>' : "");
+  }
+
+  return '<article class="entry" id="e' + acc + '">' +
+    '<div class="gutter"><a class="acc" href="#e' + acc + '">' + acc + '</a></div>' +
+    '<div class="body">' + body + '</div>' +
+  '</article>';
+}
+
+const log = document.getElementById("log");
+const sentinel = document.getElementById("sentinel");
+const end = document.getElementById("end");
+
+function appendNext() {
+  const next = BLOCKS.slice(shown, shown + PAGE);
+  if (!next.length) {
+    observer.disconnect();
+    end.hidden = false;
+    return false;
+  }
+  log.insertAdjacentHTML("beforeend", next.map(rowHTML).join(""));
+  shown += next.length;
+  return true;
+}
+
+const observer = new IntersectionObserver(function (entries) {
+  if (entries[0].isIntersecting) appendNext();
+}, { rootMargin: "800px 0px" });
+
+appendNext();
+observer.observe(sentinel);
+
+// A deep link may point at an entry that has not been appended yet.
+// Keep loading until it exists, then jump to it.
+if (location.hash && /^#e\d+$/.test(location.hash)) {
+  while (!document.querySelector(location.hash) && appendNext()) { /* keep going */ }
+  const target = document.querySelector(location.hash);
+  if (target) target.scrollIntoView();
+}
+
+const root = document.documentElement;
+
+document.getElementById("theme").addEventListener("click", function () {
+  const dark = root.getAttribute("data-theme") === "dark";
+  root.setAttribute("data-theme", dark ? "light" : "dark");
+  this.innerHTML = dark ? '<b>Light</b>&nbsp;/&nbsp;Dark' : 'Light&nbsp;/&nbsp;<b>Dark</b>';
+});
+
+document.getElementById("density").addEventListener("click", function () {
+  const idx = root.getAttribute("data-density") === "index";
+  root.setAttribute("data-density", idx ? "read" : "index");
+  this.innerHTML = idx ? '<b>Read</b>&nbsp;/&nbsp;Index' : 'Read&nbsp;/&nbsp;<b>Index</b>';
+});
+
+// ---- index-mode hover preview, pointer devices only ----------------------
+
+const previewEl = document.getElementById("preview");
+const previewImg = previewEl.querySelector("img");
+const finePointer = window.matchMedia("(hover: hover)");
+const PREVIEW_GAP = 16;
+const PREVIEW_EDGE = 8;
+let previewOn = false;
+
+const previewByRow = new Map();
+for (const b of BLOCKS) {
+  if (b.image && b.image.src) previewByRow.set("e" + String(b.n).padStart(4, "0"), b.image);
+}
+
+function indexMode() {
+  return root.getAttribute("data-density") === "index";
+}
+
+function hidePreview() {
+  if (!previewOn) return;
+  previewOn = false;
+  previewEl.classList.remove("on");
+  previewImg.removeAttribute("src");
+}
+
+function placePreview(ev) {
+  const w = previewEl.offsetWidth || 260;
+  const h = previewEl.offsetHeight || 200;
+  let x = ev.clientX + PREVIEW_GAP;
+  let y = ev.clientY + PREVIEW_GAP;
+  // Flip to the other side of the cursor rather than clipping.
+  if (x + w > window.innerWidth - PREVIEW_EDGE) x = ev.clientX - PREVIEW_GAP - w;
+  if (y + h > window.innerHeight - PREVIEW_EDGE) y = ev.clientY - PREVIEW_GAP - h;
+  if (x < PREVIEW_EDGE) x = PREVIEW_EDGE;
+  if (y < PREVIEW_EDGE) y = PREVIEW_EDGE;
+  previewEl.style.left = (x + window.scrollX) + "px";
+  previewEl.style.top = (y + window.scrollY) + "px";
+}
+
+log.addEventListener("mouseover", function (ev) {
+  if (!finePointer.matches || !indexMode()) return;
+  const row = ev.target.closest("article.entry");
+  const img = row ? previewByRow.get(row.id) : null;
+  if (!img) { hidePreview(); return; }
+  if (previewImg.getAttribute("src") !== img.src) previewImg.setAttribute("src", img.src);
+  // Known dimensions keep the edge-flip maths right before the image decodes.
+  if (img.width && img.height) {
+    const w = Math.min(260, img.width);
+    previewEl.style.width = w + "px";
+    previewImg.style.height = Math.round(w * (img.height / img.width)) + "px";
+  } else {
+    previewEl.style.width = "";
+    previewImg.style.height = "";
+  }
+  previewOn = true;
+  previewEl.classList.add("on");
+  placePreview(ev);
+});
+
+log.addEventListener("mousemove", function (ev) {
+  if (previewOn) placePreview(ev);
+});
+
+log.addEventListener("mouseleave", hidePreview);
+
+// Leaving index mode drops the preview immediately.
+new MutationObserver(function () {
+  if (!indexMode()) hidePreview();
+}).observe(root, { attributes: true, attributeFilter: ["data-density"] });
+
+// Paulo's local time, shown to every visitor regardless of where they are.
+const clockFmt = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Edmonton",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZoneName: "short"
+});
+
+function tick() {
+  document.getElementById("clock").textContent = "Calgary " + clockFmt.format(new Date());
+}
+tick();
+setInterval(tick, 20000);
+
+root.setAttribute("data-theme", "light");
+root.setAttribute("data-density", "read");
+</script>
