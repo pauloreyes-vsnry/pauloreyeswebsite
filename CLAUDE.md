@@ -63,4 +63,13 @@ the build command and `ARENA_TOKEN` live in the Netlify dashboard, not the repo
 (there is no netlify.toml).
 
 New Are.na blocks publish without a code change:
-`.github/workflows/rebuild.yml` pings a Netlify build hook daily at 13:00 UTC.
+`.github/workflows/rebuild.yml` pings a Netlify build hook at 13:00 UTC on
+Mondays and Thursdays.
+
+**Deploys are metered — don't push casually.** Netlify bills credits: 15 per
+production deploy, 300/month on the free plan, hard cap with no auto-recharge.
+That is 20 deploys a month, total. The twice-weekly rebuild spends ~9, leaving
+~11 for code pushes. A daily rebuild would blow the allowance on its own.
+
+So batch edits into one commit rather than pushing each small change, and prefer
+checking `dist/index.html` locally over deploying to look at it.
