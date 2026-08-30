@@ -10,8 +10,8 @@ Repo: `pauloreyes-vsnry/pauloreyeswebsite`.
 node --env-file=.env build.js
 ```
 
-Reads `template.html`, fetches the channel, writes `dist/index.html`. Needs
-`ARENA_TOKEN` in `.env`. (`inspect.mjs` and `variants.mjs` are throwaway scripts
+Reads `template.html`, fetches the channel, writes `dist/index.html` and
+`dist/feed.xml`. Needs `ARENA_TOKEN` in `.env`. (`inspect.mjs` and `variants.mjs` are throwaway scripts
 for eyeballing the API response.)
 
 **Zero dependencies, and it stays that way.** No package.json, no framework, no
@@ -22,6 +22,10 @@ library, it doesn't.
 anchor moves, and asserts the progressive-loading code (from
 `const log = document.getElementById("log");` to EOF) survives byte-identical.
 Those guards catch template drift — don't route around them.
+
+The RSS feed is hand-rolled XML built from the raw blocks (not the page records,
+which are already HTML-escaped — feeding those through would double-escape).
+It is checked for well-formedness before it is written.
 
 ## Are.na v3 field gotchas
 

@@ -10,6 +10,13 @@ const UA = "pauloreyes.com build script (node; +https://pauloreyes.com)";
 const TEMPLATE = new URL("./template.html", import.meta.url);
 const OUT_DIR = new URL("./dist/", import.meta.url);
 const OUT_FILE = new URL("./index.html", OUT_DIR);
+const OUT_FEED = new URL("./feed.xml", OUT_DIR);
+
+const SITE = "https://pauloreyes.net";
+const FEED_URL = `${SITE}/feed.xml`;
+const FEED_DESCRIPTION =
+  "A research log \u2014 links, images and notes saved by Paulo Reyes, "
+  + "published from an Are.na channel.";
 
 // Everything from here to the end of the template is progressive-loading and
 // interaction code. The build must not touch a byte of it.
@@ -178,6 +185,208 @@ function mapBlock(block, n) {
   }
 
   return rec;
+}
+
+// ---------------------------------------------------------------------------
+// feed
+// ---------------------------------------------------------------------------
+
+function xmlEsc(s) {
+  return String(s)
+    // Control characters are not legal in XML 1.0 at all.
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function cdata(s) {
+  const clean = String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+  // Split any accidental terminator so it cannot close the section early.
+  return "<![CDATA[" + clean.replace(/\]\]>/g, "]]]]><![CDATA[>") + "]]>";
+}
+
+function rawHttpUrl(url) {
+  if (typeof url !== "string") return null;
+  const trimmed = url.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : null;
+}
+
+const RFC822_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const RFC822_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function rfc822(value) {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const p = (n) => String(n).padStart(2, "0");
+  return RFC822_DAYS[d.getUTCDay()] + ", " + p(d.getUTCDate()) + " "
+    + RFC822_MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear() + " "
+    + p(d.getUTCHours()) + ":" + p(d.getUTCMinutes()) + ":" + p(d.getUTCSeconds())
+    + " GMT";
+}
+
+// Markdown down to readable prose: markers dropped, link labels kept.
+function mdToPlain(md) {
+  if (typeof md !== "string" || !md.trim()) return "";
+  return md
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, "$1")
+    .replace(/==([^\n]+?)==/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/(^|[\s(])[*_]([^*_\n]+)[*_]/g, "$1$2")
+    .replace(/^[ \t]*>[ \t]?/gm, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function firstLine(text, max) {
+  const limit = max || 70;
+  const line = text.split("\n").map((s) => s.trim()).find(Boolean) || "";
+  if (line.length <= limit) return line;
+  const cut = line.slice(0, limit);
+  const space = cut.lastIndexOf(" ");
+  return (space > limit * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:.]+$/, "") + "…";
+}
+
+// Filenames that carry no meaning for a reader.
+const OPAQUE_STEM = [
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  /^[0-9a-f]{8,}$/i,
+  /^(img|dsc|dscf|pxl|photo|image|screen[ _-]?shot)[ _-]?\d+/i,
+  /^[0-9][0-9._-]*$/
+];
+
+function feedTitle(block, acc) {
+  const title = (block.title || "").trim();
+  if (block.type === "Image") {
+    const m = title.match(/^(.*)\.(jpe?g|png|gif|webp|avif|heic|heif|tiff?|bmp|svg)$/i);
+    const stem = m ? m[1] : title;
+    if (!title || OPAQUE_STEM.some((re) => re.test(stem))) return "Image " + acc;
+    return title;
+  }
+  if (title) return title;
+  const plain = mdToPlain(block.type === "Text"
+    ? block.content?.markdown
+    : block.description?.markdown);
+  if (plain) return firstLine(plain);
+  return (block.type || "Block") + " " + acc;
+}
+
+// Built from the raw blocks, not the page records, so text is escaped exactly
+// once — the page records already carry HTML escaping.
+function mapFeedItem(block, n) {
+  const acc = String(n).padStart(4, "0");
+  const permalink = SITE + "/#e" + acc;
+  return {
+    title: feedTitle(block, acc),
+    // Identity never moves, even if the source URL does.
+    guid: permalink,
+    // Match the page, which links an Attachment straight at its file.
+    link: rawHttpUrl(block.source?.url) || rawHttpUrl(block.attachment?.url) || permalink,
+    pubDate: rfc822(block.connection?.connected_at),
+    description: mdToPlain(block.type === "Text"
+      ? block.content?.markdown
+      : block.description?.markdown)
+  };
+}
+
+function buildFeed(items, builtAt) {
+  const out = [];
+  out.push('<?xml version="1.0" encoding="UTF-8"?>');
+  out.push('<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">');
+  out.push("  <channel>");
+  out.push("    <title>Paulo Reyes</title>");
+  out.push("    <link>" + xmlEsc(SITE) + "</link>");
+  out.push("    <description>" + xmlEsc(FEED_DESCRIPTION) + "</description>");
+  out.push("    <language>en</language>");
+  out.push('    <atom:link href="' + xmlEsc(FEED_URL) + '" rel="self" type="application/rss+xml"/>');
+  const built = rfc822(builtAt);
+  if (built) out.push("    <lastBuildDate>" + built + "</lastBuildDate>");
+
+  for (const item of items) {
+    out.push("    <item>");
+    out.push("      <title>" + xmlEsc(item.title) + "</title>");
+    out.push("      <link>" + xmlEsc(item.link) + "</link>");
+    out.push('      <guid isPermaLink="false">' + xmlEsc(item.guid) + "</guid>");
+    if (item.pubDate) out.push("      <pubDate>" + item.pubDate + "</pubDate>");
+    if (item.description) out.push("      <description>" + cdata(item.description) + "</description>");
+    out.push("    </item>");
+  }
+
+  out.push("  </channel>");
+  out.push("</rss>");
+  return out.join("\n") + "\n";
+}
+
+// Well-formedness check so a malformed feed is never written to disk.
+function assertWellFormedXml(xml) {
+  const fail = (msg, at) => {
+    throw new Error("feed.xml is not well-formed: " + msg + " (offset " + at + ")");
+  };
+  const ENTITY = /&(#\d+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g;
+
+  const checkChars = (text, base, what) => {
+    const lt = text.indexOf("<");
+    if (lt !== -1) fail("raw '<' in " + what, base + lt);
+    let m;
+    const amps = [];
+    for (let k = text.indexOf("&"); k !== -1; k = text.indexOf("&", k + 1)) amps.push(k);
+    ENTITY.lastIndex = 0;
+    const valid = new Set();
+    while ((m = ENTITY.exec(text)) !== null) valid.add(m.index);
+    for (const at of amps) if (!valid.has(at)) fail("bare '&' in " + what, base + at);
+  };
+
+  const stack = [];
+  let i = 0;
+  while (i < xml.length) {
+    const lt = xml.indexOf("<", i);
+    if (lt === -1) { checkChars(xml.slice(i), i, "text"); break; }
+    checkChars(xml.slice(i, lt), i, "text");
+
+    if (xml.startsWith("<!--", lt)) {
+      const end = xml.indexOf("-->", lt + 4);
+      if (end === -1) fail("unterminated comment", lt);
+      i = end + 3; continue;
+    }
+    if (xml.startsWith("<![CDATA[", lt)) {
+      const end = xml.indexOf("]]>", lt + 9);
+      if (end === -1) fail("unterminated CDATA section", lt);
+      i = end + 3; continue;
+    }
+    if (xml.startsWith("<?", lt)) {
+      const end = xml.indexOf("?>", lt + 2);
+      if (end === -1) fail("unterminated processing instruction", lt);
+      i = end + 2; continue;
+    }
+
+    const gt = xml.indexOf(">", lt);
+    if (gt === -1) fail("unterminated tag", lt);
+    let body = xml.slice(lt + 1, gt);
+    const selfClosing = body.endsWith("/");
+    if (selfClosing) body = body.slice(0, -1);
+
+    if (body.startsWith("/")) {
+      const name = body.slice(1).trim();
+      const open = stack.pop();
+      if (open !== name) fail("</" + name + "> closes <" + (open || "nothing") + ">", lt);
+    } else {
+      const name = body.split(/[\s/]/)[0];
+      if (!name) fail("empty tag name", lt);
+      const attrs = body.slice(name.length);
+      const quotes = (attrs.match(/"/g) || []).length;
+      if (quotes % 2 !== 0) fail("unbalanced quotes in <" + name + ">", lt);
+      checkChars(attrs.replace(/"/g, ""), lt, "attributes of <" + name + ">");
+      if (!selfClosing) stack.push(name);
+    }
+    i = gt + 1;
+  }
+  if (stack.length) fail("unclosed <" + stack[stack.length - 1] + ">", xml.length);
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -366,8 +575,13 @@ const records = kept.map((b, i) => mapBlock(b, i + 1)).reverse();
 const template = await readFile(TEMPLATE, "utf8");
 const html = patchTemplate(template, records);
 
+const feedItems = kept.map((b, i) => mapFeedItem(b, i + 1)).reverse();
+const feed = buildFeed(feedItems, new Date());
+assertWellFormedXml(feed);
+
 await mkdir(OUT_DIR, { recursive: true });
 await writeFile(OUT_FILE, html);
+await writeFile(OUT_FEED, feed);
 
 const counts = {};
 for (const r of records) counts[r.type] = (counts[r.type] ?? 0) + 1;
@@ -377,3 +591,4 @@ for (const [type, n] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
   console.log(`  ${type.padEnd(12)} ${n}`);
 }
 console.log(`written  ${OUT_FILE.pathname}`);
+console.log(`written  ${OUT_FEED.pathname} (${feedItems.length} items)`);
