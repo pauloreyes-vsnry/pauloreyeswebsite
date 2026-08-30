@@ -15,9 +15,11 @@
     --sans: "IBM Plex Sans", -apple-system, system-ui, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
     --serif: "IBM Plex Serif", Georgia, serif;
+    --link-hover: #0b57d0;
   }
 
   :root[data-theme="dark"] {
+    --link-hover: #7ba7f0;
     --paper: #0b0b0b;
     --ink: #e8e8e8;
     --dim: #8a8a8a;
@@ -45,6 +47,11 @@
 
   a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
   a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* Bio links only. The research log has no hover colour. */
+  @media (hover: hover) {
+    .bio a:hover { color: var(--link-hover); }
+  }
 
   /* ---------- masthead ---------- */
 
@@ -97,6 +104,9 @@
     line-height: 1.55;
     margin: 0;
   }
+
+  .bio p { margin: 0 0 13px; }
+  .bio p:last-child { margin-bottom: 0; }
 
   /* ---------- section label ---------- */
 
@@ -342,10 +352,20 @@
     <button class="ctl" id="theme" aria-label="Toggle light or dark"><b>Light</b>&nbsp;/&nbsp;Dark</button>
   </div>
 
-  <p class="bio">Paulo Reyes is a brand and communications strategist based in Calgary, by
-  way of Manila. He's a co-founder and Managing Partner at <a href="https://mondayoff.world/">Monday Off</a>,
-  leads design and digital communications at <a href="https://www.faccalgary.com/">First Alliance Church</a>, and
-  writes for <a href="https://pcehht.subscribepage.io/">Credible Insights</a>.</p>
+  <div class="bio">
+    <p>Paulo is a brand and communications strategist. He's a founder and Managing
+    Partner at <a href="https://mondayoff.world/">Monday Off</a>, leads design and
+    digital communications at <a href="https://www.faccalgary.com/">First Alliance Church</a>,
+    and writes for <a href="https://pcehht.subscribepage.io/">Credible Insights</a>&trade;</p>
+
+    <p>Throughout his career, he's worked with brands such as Nike, Aesop, Carhartt
+    WIP, New Era, Spotify, Vans, Dickies, YETI, A.P.C., and more.</p>
+
+    <p>Paulo grew up in Kuala Lumpur, Singapore, and Manila. He currently resides
+    in Calgary, Alberta with his wife and son.</p>
+
+    <p>You may reach him at <a href="mailto:mail@pauloreyes.net">mail@pauloreyes.net</a></p>
+  </div>
 
   <div class="controls">
     <span class="label">Research log</span>

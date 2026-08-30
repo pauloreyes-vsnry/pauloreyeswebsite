@@ -41,7 +41,10 @@ Verified against the live API. Don't guess or substitute.
 
 ## Design constraints
 
-- No grid, no accent colour, no animation or transitions
+- No grid, no animation or transitions
+- No accent colour, with one exception: bio links hover blue
+  (`--link-hover`, a separate value per theme). Scoped to `.bio` and wrapped in
+  `@media (hover: hover)` — the research log stays monochrome
 - Three IBM Plex faces carry block type: Sans (UI), Mono (metadata), Serif (notes)
 - Images capped at 380px wide
 - Two modes (Read / Index) times two themes (light / dark). Changes must hold in
