@@ -27,6 +27,7 @@
     --hatch: #1a1a1a;
   }
 
+
   * { box-sizing: border-box; }
 
   html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
@@ -71,6 +72,7 @@
   }
 
   .clock {
+    display: inline-block;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
@@ -180,14 +182,22 @@
     margin-top: 8px;
     display: block;
   }
+  /* Domains are machine strings, so they lowercase. A typed attribution is a
+     person's name and keeps its capitals. */
   .src { text-transform: lowercase; }
+  .src.typed { text-transform: none; }
 
   .idx-label { display: none; }
+
+  /* One tab stop around the image and its caption. */
+  .plate-link { display: block; text-decoration: none; }
+  .plate-link .caption { text-decoration: underline; text-underline-offset: 2px; }
 
   .plate {
     display: block;
     width: 100%;
     max-width: 380px;
+    margin-bottom: 10px;
     border: 1px solid var(--rule);
     background-color: var(--hatch);
     background-image: repeating-linear-gradient(45deg, transparent 0 7px, var(--rule) 7px 8px);
@@ -334,6 +344,15 @@
     :root[data-density="index"] .title,
     :root[data-density="index"] .note { white-space: normal; }
 
+    /* Narrow bar: drop RSS, keep Contact and Top. */
+    .foot .links .rss { display: none; }
+
+    /* Stamp drops onto its own line under the clock; the middot goes with it. */
+    .foot .inner { align-items: flex-start; }
+    .clock .sep { display: none; }
+    .clock .time,
+    .clock .age { display: block; }
+
     /* Only two short items — keep them on one row. */
     .foot { padding: 0 18px; }
     .foot .inner { gap: 12px; }
@@ -382,7 +401,7 @@
   <div class="inner">
     <span class="clock" id="clock">Calgary</span>
     <span class="links">
-      <a href="/feed.xml">RSS</a>
+      <a class="rss" href="/feed.xml">RSS</a>
       <a href="mailto:mail@pauloreyes.net">mail@pauloreyes.net</a>
       <a href="#top">&#8593; Top</a>
     </span>
@@ -431,6 +450,10 @@ for (let i = 0; i < TOTAL; i++) {
 const KIND = { Text: "text", Link: "link", Image: "image", Media: "media", Attachment: "image" };
 const PAGE = 24;
 let shown = 0;
+
+// Replaced at build time. Kept above the progressive-loading tail so the
+// byte-identical assertion in build.js still holds.
+const BUILT_AT = "1970-01-01T00:00:00.000Z";
 
 function rowHTML(b) {
   const kind = KIND[b.base_class];
@@ -570,6 +593,8 @@ new MutationObserver(function () {
   if (!indexMode()) hidePreview();
 }).observe(root, { attributes: true, attributeFilter: ["data-density"] });
 
+// ---- footer stamp: build freshness by default, local time on demand -------
+
 // Paulo's local time, shown to every visitor regardless of where they are.
 const clockFmt = new Intl.DateTimeFormat("en-CA", {
   timeZone: "America/Edmonton",
@@ -579,10 +604,57 @@ const clockFmt = new Intl.DateTimeFormat("en-CA", {
   timeZoneName: "short"
 });
 
-function tick() {
-  document.getElementById("clock").textContent = "Calgary " + clockFmt.format(new Date());
+const stampEl = document.getElementById("clock");
+const STALE_DAYS = 14;
+
+function freshness() {
+  const built = new Date(BUILT_AT);
+  if (Number.isNaN(built.getTime())) return null;
+  const days = Math.floor((Date.now() - built.getTime()) / 86400000);
+  if (days < 1) return { text: "pulled today", stale: false };
+  return {
+    text: "pulled " + days + (days === 1 ? " day ago" : " days ago"),
+    stale: days > STALE_DAYS
+  };
 }
-tick();
+
+// Side by side on desktop: "Calgary 21:07 MDT · pulled 2 days ago". Below the
+// 700px breakpoint the parts become blocks and the middot is hidden, so the
+// stamp drops onto its own line under the clock.
+function renderStamp() {
+  stampEl.title = BUILT_AT;
+  stampEl.textContent = "";
+
+  const time = document.createElement("span");
+  time.className = "time";
+  time.textContent = "Calgary " + clockFmt.format(new Date());
+  stampEl.appendChild(time);
+
+  const age = freshness();
+  if (!age) return;
+
+  const sep = document.createElement("span");
+  sep.className = "sep";
+  sep.textContent = " \u00b7 ";
+  stampEl.appendChild(sep);
+
+  const ageEl = document.createElement("span");
+  ageEl.className = "age";
+  if (age.stale) {
+    // Reuses the existing <mark> underline. No new colour.
+    const flag = document.createElement("mark");
+    flag.textContent = age.text;
+    ageEl.appendChild(flag);
+  } else {
+    ageEl.textContent = age.text;
+  }
+  stampEl.appendChild(ageEl);
+}
+
+function tick() {
+  renderStamp();
+}
+renderStamp();
 setInterval(tick, 20000);
 
 root.setAttribute("data-theme", "light");

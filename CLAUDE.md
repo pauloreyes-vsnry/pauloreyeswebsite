@@ -11,8 +11,9 @@ node --env-file=.env build.js
 ```
 
 Reads `template.html`, fetches the channel, writes `dist/index.html` and
-`dist/feed.xml`. Needs `ARENA_TOKEN` in `.env`. (`inspect.mjs` and `variants.mjs` are throwaway scripts
-for eyeballing the API response.)
+`dist/feed.xml`. Needs `ARENA_TOKEN` in `.env`. (`inspect.mjs`, `variants.mjs` and `embed.mjs` are
+throwaway scripts for eyeballing the API response — gitignored, local only,
+so they will not be in a fresh clone.)
 
 **Zero dependencies, and it stays that way.** No package.json, no framework, no
 bundler — Node 24, ESM, standard library. If something looks like it needs a
@@ -27,6 +28,12 @@ The RSS feed is hand-rolled XML built from the raw blocks (not the page records,
 which are already HTML-escaped — feeding those through would double-escape).
 It is checked for well-formedness before it is written.
 
+`BUILT_AT` is stamped with the build's ISO timestamp through the same anchored
+replacement. It must stay **above** `const log = document.getElementById("log");`
+— the tail below that line is asserted byte-identical, so a stamp inside it would
+fail every build. The footer-left shows "pulled N days ago" from it by default
+and toggles to the Calgary clock on click; past 14 days it wraps in `<mark>`.
+
 ## Are.na v3 field gotchas
 
 Verified against the live API. Don't guess or substitute.
@@ -39,6 +46,13 @@ Verified against the live API. Don't guess or substitute.
 - Keep only `base_type === "Block"` and `state === "available"`
 - Never emit `embed.html`. No third-party iframes — Embeds render as links
 
+**Authoring convention.** In a Text block, put the attribution in its own final
+paragraph starting with an em dash: `— Chuck Palahniuk`. A plain `--` works too.
+The build strips it from the note and renders it as the mono `.src` line. This
+matters because index mode shows only a note's first paragraph, so an
+attribution left inside the body text disappears there. A typed attribution
+outranks `source.provider.name`.
+
 ## Design constraints
 
 - No grid, no animation or transitions
@@ -47,8 +61,14 @@ Verified against the live API. Don't guess or substitute.
   `@media (hover: hover)` — the research log stays monochrome
 - Three IBM Plex faces carry block type: Sans (UI), Mono (metadata), Serif (notes)
 - Images capped at 380px wide
-- Two modes (Read / Index) times two themes (light / dark). Changes must hold in
-  all four
+- Three axes, 16 combinations, and a change must hold in all of them:
+  Read/Index x light/dark x 4 hues
+- Hue cycle: tapping the masthead name cycles `data-hue` neutral → red → green →
+  blue → neutral, independent of `data-theme`. Neutral removes the attribute
+  entirely, so the default palette is untouched. Palettes are `oklch()` with no
+  sRGB fallback block — browsers map down on narrow-gamut displays. Keep the
+  order stable and always pass through neutral: four taps is how a visitor gets
+  back out
 
 ## Workflow
 

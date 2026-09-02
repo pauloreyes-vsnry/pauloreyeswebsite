@@ -105,6 +105,42 @@ function mdToHtml(md) {
     .join("");
 }
 
+// A final paragraph opening with an em dash (or a plain --) is a typed
+// attribution, not body text. Splitting it out keeps the note single-paragraph,
+// which matters because index mode shows only the first paragraph.
+const ATTRIBUTION = /^(?:\u2014|--)\s*([\s\S]+)$/;
+
+function splitAttribution(md) {
+  if (typeof md !== "string" || !md.trim()) return { body: md, attribution: null };
+  const paras = md.trim().split(/\n{2,}/);
+  if (paras.length < 2) return { body: md, attribution: null };
+  const match = paras[paras.length - 1].trim().match(ATTRIBUTION);
+  if (!match) return { body: md, attribution: null };
+  return {
+    body: paras.slice(0, -1).join("\n\n"),
+    // Normalise -- to an em dash so the rendered line is consistent.
+    attribution: "\u2014 " + match[1].trim()
+  };
+}
+
+// A description whose final line is nothing but a URL is a destination for the
+// image, not body text. Are.na auto-links a pasted URL into [url](url), so that
+// form counts too — it is what a pasted link actually looks like in the API.
+const BARE_URL = /^(https?:\/\/\S+)$/;
+const SELF_LINK = /^\[(https?:\/\/\S+)\]\((https?:\/\/\S+)\)$/;
+
+function splitTrailingUrl(md) {
+  if (typeof md !== "string" || !md.trim()) return { body: md, href: null };
+  const lines = md.trim().split(/\n+/);
+  const last = lines[lines.length - 1].trim();
+  const bare = last.match(BARE_URL);
+  const self = last.match(SELF_LINK);
+  // Only a pasted URL counts. A labelled link stays as prose.
+  const href = bare ? bare[1] : (self && self[1] === self[2] ? self[2] : null);
+  if (!href) return { body: md, href: null };
+  return { body: lines.slice(0, -1).join("\n\n"), href };
+}
+
 function fileSize(bytes) {
   if (typeof bytes !== "number" || !isFinite(bytes)) return null;
   const units = ["B", "KB", "MB", "GB"];
@@ -145,26 +181,40 @@ function mapBlock(block, n) {
     url: sourceUrl,
     provider: provider ? esc(provider) : null,
     note: null,
+    attribution: null,
+    href: null,
     image: null,
     alt: null,
     file: null
   };
 
   switch (block.type) {
-    case "Text":
-      rec.note = mdToHtml(block.content?.markdown);
+    case "Text": {
+      const split = splitAttribution(block.content?.markdown);
+      rec.note = mdToHtml(split.body);
+      rec.attribution = split.attribution ? esc(split.attribution) : null;
       break;
+    }
 
     case "Link":
-    case "Embed":
       rec.note = mdToHtml(block.description?.markdown);
       break;
 
-    case "Image":
+    case "Embed":
+      // embed.thumbnail_url is null across the board; image.small is the cover.
       rec.image = thumb(block);
       rec.alt = esc(block.image?.alt_text ?? block.title ?? "");
       rec.note = mdToHtml(block.description?.markdown);
       break;
+
+    case "Image": {
+      const dest = splitTrailingUrl(block.description?.markdown);
+      rec.image = thumb(block);
+      rec.alt = esc(block.image?.alt_text ?? block.title ?? "");
+      rec.note = mdToHtml(dest.body);
+      rec.href = safeUrl(dest.href);
+      break;
+    }
 
     case "Attachment": {
       rec.url = safeUrl(block.attachment?.url) ?? sourceUrl;
@@ -414,20 +464,30 @@ function rowHtmlSource() {
   var body;
 
   if (b.type === "Text") {
-    body = note + (b.provider ? '<span class="src">&mdash; ' + b.provider + '</span>' : "");
+    // A typed attribution wins over the source provider.
+    var credit = b.attribution
+      // .typed keeps the capitals; provider domains stay lowercased.
+      ? '<span class="src typed">' + b.attribution + '</span>'
+      : (b.provider ? '<span class="src">&mdash; ' + b.provider + '</span>' : "");
+    body = note + credit;
   } else if (b.type === "Image") {
     // Index mode hides the plate and caption, so a note is the only thing that
     // would render. Fall back to a label only when there is none.
-    body = plate(b) + (note || '<span class="idx-label">[image]</span>') +
-      (title ? '<span class="caption">' + title + '</span>' : "");
+    var cap = title ? '<span class="caption">' + title + '</span>' : "";
+    var label = note || '<span class="idx-label">[image]</span>';
+    body = b.href
+      // One anchor around image and caption: a single tab stop, not two.
+      ? '<a class="plate-link" href="' + b.href + '" rel="noopener">' + plate(b) + cap + '</a>' + label
+      : plate(b) + label + cap;
   } else if (b.type === "Attachment") {
     // The heading always renders in index mode, so the row is never empty and
     // no fallback label is needed.
     body = '<h2 class="title">' + heading + '</h2>' + plate(b) + note +
       (b.file ? '<span class="caption">' + b.file + '</span>' : "");
   } else {
-    // Link, Embed, and any type this build does not know about.
-    body = '<h2 class="title">' + heading + '</h2>' + note +
+    // Link, Embed, and any type this build does not know about. Embeds carry a
+    // cover image; it sits above the title. Still no iframes, ever.
+    body = plate(b) + '<h2 class="title">' + heading + '</h2>' + note +
       (b.provider ? '<span class="src">' + b.provider + '</span>' : "");
   }
 
@@ -457,6 +517,9 @@ const PLATE_CSS = `
     height: auto;
     border: 1px solid var(--rule);
     background-color: var(--hatch);
+    /* One gap below every image. Adjacent-sibling margins collapse into this,
+       so an Embed title, a caption or a note all sit the same distance away. */
+    margin-bottom: 10px;
   }
 `;
 
@@ -509,10 +572,18 @@ function patchTemplate(template, records) {
     "the SEED repeat loop"
   );
 
-  // 4. Demo KIND map -> unused by the real renderer.
+  // 4. Stamp the build time so the page can show its own freshness.
+  html = replaceOnce(
+    html,
+    /const BUILT_AT = "[^"]*";/,
+    'const BUILT_AT = "' + new Date().toISOString() + '";',
+    "the BUILT_AT placeholder"
+  );
+
+  // 5. Demo KIND map -> unused by the real renderer.
   html = replaceOnce(html, /const KIND = \{[^}]*\};\n/, "", "the KIND map");
 
-  // 5. Demo rowHTML -> real field map. Bounded by the tail anchor so nothing
+  // 6. Demo rowHTML -> real field map. Bounded by the tail anchor so nothing
   //    below it (appendNext, observer, deep link, toggles, clock) is touched.
   const fnAt = html.indexOf("function rowHTML(b) {");
   const stopAt = html.indexOf(TAIL_ANCHOR);
