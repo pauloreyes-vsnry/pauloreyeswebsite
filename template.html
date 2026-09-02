@@ -1,6 +1,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paulo Reyes</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
@@ -15,11 +17,11 @@
     --sans: "IBM Plex Sans", -apple-system, system-ui, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
     --serif: "IBM Plex Serif", Georgia, serif;
-    --link-hover: #0b57d0;
+    --link-hover: #0000FF;
   }
 
   :root[data-theme="dark"] {
-    --link-hover: #7ba7f0;
+    --link-hover: #8080ff;
     --paper: #0b0b0b;
     --ink: #e8e8e8;
     --dim: #8a8a8a;
@@ -300,9 +302,10 @@
     z-index: 10;
   }
 
+  /* Deliberately NOT constrained to the 760px sheet. The bar spans the
+     viewport, so it reads as chrome under the document rather than part of the
+     column. This is the one element that does not share the page's left edge. */
   .foot .inner {
-    max-width: 760px;
-    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: baseline;

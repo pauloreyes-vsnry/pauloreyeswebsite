@@ -5,3 +5,4 @@ dist/
 inspect.mjs
 variants.mjs
 embed.mjs
+dash.mjs

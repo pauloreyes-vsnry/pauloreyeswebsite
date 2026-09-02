@@ -1,7 +1,7 @@
 // build.js — generates dist/index.html from an Are.na channel.
 // Run: node --env-file=.env build.js
 
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
 
 const CHANNEL = "website-pulls";
 const PER = 100;
@@ -11,6 +11,18 @@ const TEMPLATE = new URL("./template.html", import.meta.url);
 const OUT_DIR = new URL("./dist/", import.meta.url);
 const OUT_FILE = new URL("./index.html", OUT_DIR);
 const OUT_FEED = new URL("./feed.xml", OUT_DIR);
+const OUT_ICON = new URL("./favicon.svg", OUT_DIR);
+
+// A real binary asset, committed to the repo — iOS needs a PNG and will not
+// take the SVG favicon for a home-screen icon.
+const TOUCH_ICON = new URL("./apple-touch-icon.png", import.meta.url);
+const OUT_TOUCH_ICON = new URL("./apple-touch-icon.png", OUT_DIR);
+
+// Solid square, edge to edge, no padding.
+const FAVICON =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">'
+  + '<rect width="16" height="16" fill="#0000FF"/>'
+  + "</svg>\n";
 
 const SITE = "https://pauloreyes.net";
 const FEED_URL = `${SITE}/feed.xml`;
@@ -108,7 +120,9 @@ function mdToHtml(md) {
 // A final paragraph opening with an em dash (or a plain --) is a typed
 // attribution, not body text. Splitting it out keeps the note single-paragraph,
 // which matters because index mode shows only the first paragraph.
-const ATTRIBUTION = /^(?:\u2014|--)\s*([\s\S]+)$/;
+// Em dash, en dash, double hyphen or plain hyphen — whichever got typed. The
+// longer `--` is listed before `-` so alternation does not stop at one hyphen.
+const ATTRIBUTION = /^(?:\u2014|\u2013|--|-)[ \t]*([\s\S]+)$/;
 
 function splitAttribution(md) {
   if (typeof md !== "string" || !md.trim()) return { body: md, attribution: null };
@@ -653,6 +667,9 @@ assertWellFormedXml(feed);
 await mkdir(OUT_DIR, { recursive: true });
 await writeFile(OUT_FILE, html);
 await writeFile(OUT_FEED, feed);
+await writeFile(OUT_ICON, FAVICON);
+// copyFile is a byte copy, so the PNG is never round-tripped through a string.
+await copyFile(TOUCH_ICON, OUT_TOUCH_ICON);
 
 const counts = {};
 for (const r of records) counts[r.type] = (counts[r.type] ?? 0) + 1;
@@ -663,3 +680,5 @@ for (const [type, n] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
 }
 console.log(`written  ${OUT_FILE.pathname}`);
 console.log(`written  ${OUT_FEED.pathname} (${feedItems.length} items)`);
+console.log(`written  ${OUT_ICON.pathname}`);
+console.log(`copied   ${OUT_TOUCH_ICON.pathname}`);

@@ -47,7 +47,10 @@ Verified against the live API. Don't guess or substitute.
 - Never emit `embed.html`. No third-party iframes — Embeds render as links
 
 **Authoring convention.** In a Text block, put the attribution in its own final
-paragraph starting with an em dash: `— Chuck Palahniuk`. A plain `--` works too.
+paragraph starting with a dash: `— Chuck Palahniuk`. Any dash works — em dash,
+en dash, a plain hyphen or `--` — and the output is normalised to an em dash.
+It must be a separate final paragraph, so a single-paragraph block never picks
+one up.
 The build strips it from the note and renders it as the mono `.src` line. This
 matters because index mode shows only a note's first paragraph, so an
 attribution left inside the body text disappears there. A typed attribution
