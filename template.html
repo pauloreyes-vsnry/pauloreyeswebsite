@@ -112,6 +112,25 @@
   .bio p { margin: 0 0 13px; }
   .bio p:last-child { margin-bottom: 0; }
 
+  .bio details { margin: 0 0 13px; }
+  .bio details p:first-of-type { margin-top: 13px; }
+
+  /* Metadata mono, same 10px/0.05em as .gutter, .src, .end and the footer. */
+  .bio summary {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    color: var(--dim);
+    cursor: pointer;
+    list-style: none;
+  }
+  .bio summary::-webkit-details-marker { display: none; }
+  .bio summary::before { content: "[+] "; }
+  .bio details[open] summary::before { content: "[\2013] "; }
+  .bio summary:hover { color: var(--ink); }
+  .bio summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
   /* ---------- section label ---------- */
 
   .controls {
@@ -375,16 +394,22 @@
   </div>
 
   <div class="bio">
-    <p>Paulo is a brand and communications strategist. He's a founder and Managing
-    Partner at <a href="https://mondayoff.world/">Monday Off</a>, leads design and
-    digital communications at <a href="https://www.faccalgary.com/">First Alliance Church</a>,
-    and writes for <a href="https://pcehht.subscribepage.io/">Credible Insights</a>&trade;</p>
+    <p>Paulo is a brand and communications strategist working across retail,
+    lifestyle, and non-profit sectors in Southeast Asia and Canada. He lives in
+    Calgary with his wife and son.</p>
 
-    <p>Throughout his career, he's worked with brands such as Nike, Aesop, Carhartt
-    WIP, New Era, Spotify, Vans, Dickies, YETI, A.P.C., and more.</p>
+    <details>
+      <summary>More</summary>
 
-    <p>Paulo grew up in Kuala Lumpur, Singapore, and Manila. He currently resides
-    in Calgary, Alberta with his wife and son.</p>
+      <p>He's a founder and Managing Partner at <a href="https://mondayoff.world/">Monday Off</a>,
+      leads design and digital communications at <a href="https://www.faccalgary.com/">First Alliance Church</a>,
+      and writes for <a href="https://pcehht.subscribepage.io/">Credible Insights</a>&trade;</p>
+
+      <p>Throughout his career, he's worked with brands such as Nike, Aesop, Carhartt
+      WIP, New Era, Spotify, Vans, Dickies, YETI, A.P.C., and more.</p>
+
+      <p>Paulo grew up in Kuala Lumpur, Singapore, and Manila.</p>
+    </details>
 
     <p>You may reach him at <a href="mailto:mail@pauloreyes.net">mail@pauloreyes.net</a></p>
   </div>
